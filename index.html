@@ -443,7 +443,7 @@
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby1St4Kf1_3T87NiZd2QOqb5YiiSPT991c_sUfUySOaWfse_4G_GUbMZ8_YtzHWpyBi/exec"; // termina en /exec
+const API_URL = "https://script.google.com/macros/s/AKfycby1St4Kf1_3T87NiZd2QOqb5YiiSPT991c_sUfUySOaWfse_4G_GUbMZ8_YtzHWpyBi/exec";
 
 const Q1_OPTS = [
   { text: "Sí, casi todo llega por WhatsApp o canales informales" },
@@ -498,7 +498,9 @@ function renderOptions(containerId, opts, onSelect) {
   opts.forEach((opt, i) => {
     const btn = document.createElement("button");
     btn.className = "option";
-    btn.innerHTML = opt.text + (opt.desc ? '<span class="opt-sub">' + opt.desc + "</span>" : "");
+    const mainText = opt.text || opt.label;
+    const subText = opt.desc;
+    btn.innerHTML = mainText + (subText ? '<span class="opt-sub">' + subText + "</span>" : "");
     btn.addEventListener("click", () => {
       [...container.children].forEach(c => c.classList.remove("selected"));
       btn.classList.add("selected");
