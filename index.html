@@ -443,7 +443,7 @@
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbytpcobEQTJgpv8qakrBGBp7w27cXTlIlkJi8PBR9BuPChGeMp71glRMmSRITzn3vee/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby1St4Kf1_3T87NiZd2QOqb5YiiSPT991c_sUfUySOaWfse_4G_GUbMZ8_YtzHWpyBi/exec";
 
 const Q1_OPTS = [
   { text: "Sí, casi todo llega por WhatsApp o canales informales" },
@@ -528,16 +528,17 @@ function checkSurveyReady() {
 }
 
 function postData(payload) {
-  return fetch(API_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify(payload)
-  });
+  let url = API_URL + "?";
+  const params = [];
+  for (const key in payload) {
+    params.push(encodeURIComponent(key) + "=" + encodeURIComponent(payload[key]));
+  }
+  url += params.join("&");
+  return jsonpRequest(url);
 }
 
 function sendSurvey() {
-  postData({ type: "survey", q1: answers.q1, q2: answers.q2 })
+  postData({ action: "survey", q1: answers.q1, q2: answers.q2 })
     .then(() => {
       document.getElementById("survey-status").textContent = "¡Gracias! Tu respuesta fue enviada.";
       document.getElementById("send-survey").disabled = true;
@@ -549,7 +550,7 @@ function sendSurvey() {
 }
 
 function sendVote(choice) {
-  postData({ type: "vote", choice: choice })
+  postData({ action: "vote", choice: choice })
     .then(() => {
       document.getElementById("vote-status").textContent = "¡Voto registrado! Gracias.";
     })
