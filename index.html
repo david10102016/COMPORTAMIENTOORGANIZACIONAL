@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunicación: barreras tecnológicas y jerárquicas — Encuesta y votación</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --navy: #1E2761;
+    --navy-light: #3A4584;
+    --ice: #CADCFC;
+    --teal: #1D9E75;
+    --teal-light: #5DCAA5;
+    --coral: #D85A30;
+    --coral-light: #F0997B;
+    --blue: #378ADD;
+    --blue-light: #85B7EB;
+    --bg: #F4F6FB;
+    --text: #1E2761;
+    --text-secondary: #5F5E5A;
+    --white: #FFFFFF;
+    --tv-bg: #0F1428;
+    --tv-text-secondary: #9AA0B5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1.25rem;
+  }
+
+  .container { max-width: 720px; margin: 0 auto; }
+
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+  .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+
+  .hidden { display: none !important; }
+
+  /* Role picker */
+  .role-picker { display: flex; flex-direction: column; gap: 12px; margin-top: 2rem; }
+  .role-btn {
+    padding: 1.25rem;
+    border-radius: 12px;
+    border: 1.5px solid #D9DCE6;
+    background: var(--white);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .role-btn:active { transform: scale(0.99); }
+  .role-btn:hover { border-color: var(--navy); }
+  .role-btn .role-title { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+  .role-btn .role-desc { font-size: 13px; color: var(--text-secondary); }
+
+  /* Card */
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid #E3E6EE;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Options */
+  .option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    border: 1.5px solid #D9DCE6;
+    background: var(--white);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .option:hover { border-color: var(--navy-light); }
+  .option.selected {
+    border-color: var(--navy);
+    background: #EEF1FA;
+    font-weight: 600;
+  }
+  .option .opt-sub {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: var(--navy);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary:active:not(:disabled) { transform: scale(0.99); }
+
+  .btn-secondary {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1.5px solid var(--navy);
+    background: transparent;
+    color: var(--navy);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .status-msg {
+    text-align: center;
+    font-size: 13px;
+    color: var(--teal);
+    font-weight: 600;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
+  .center-row { display: flex; justify-content: center; margin-top: 1.5rem; }
+
+  .back-link {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+
+  /* ===== HOST / TV VIEW ===== */
+  .tv-screen {
+    background: var(--tv-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    color: var(--white);
+  }
+
+  .tv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .tv-live {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--teal-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tv-live::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--coral);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .tv-title { font-size: 20px; font-weight: 700; margin-top: 4px; }
+
+  .tv-clock {
+    text-align: right;
+    font-size: 13px;
+    color: var(--tv-text-secondary);
+  }
+  .tv-clock .time {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .tv-stat {
+    text-align: right;
+  }
+  .tv-stat .label { font-size: 12px; color: var(--tv-text-secondary); }
+  .tv-stat .value { font-size: 32px; font-weight: 700; }
+
+  .tv-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .tv-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    border-radius: 8px;
+    border: 1px solid var(--navy-light);
+    background: transparent;
+    color: var(--tv-text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .tv-tab.active {
+    background: var(--navy-light);
+    color: var(--white);
+    border-color: var(--navy-light);
+  }
+
+  .tv-bar-row { margin-bottom: 20px; }
+  .tv-bar-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .tv-bar-label .name { font-size: 14px; font-weight: 600; }
+  .tv-bar-label .pct { font-size: 24px; font-weight: 700; }
+  .tv-bar-track {
+    height: 18px;
+    background: var(--navy);
+    border-radius: 9px;
+    overflow: hidden;
+  }
+  .tv-bar-fill {
+    height: 100%;
+    border-radius: 9px;
+    transition: width 0.8s ease;
+    width: 0%;
+  }
+  .tv-bar-count { font-size: 12px; color: var(--tv-text-secondary); }
+
+  .tv-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+  @media (max-width: 600px) {
+    .tv-grid { grid-template-columns: 1fr; }
+  }
+
+  .donut-wrap {
+    position: relative;
+    height: 200px;
+  }
+  .donut-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .donut-center .label { font-size: 11px; color: var(--tv-text-secondary); }
+  .donut-center .leader { font-size: 15px; font-weight: 700; color: var(--teal-light); margin: 2px 0; }
+  .donut-center .pct { font-size: 26px; font-weight: 700; }
+
+  .tv-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--navy-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .tv-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tv-logo-badge {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+    color: #04342C;
+  }
+  .tv-logo-text .title { font-size: 13px; font-weight: 700; }
+  .tv-logo-text .sub { font-size: 11px; color: var(--tv-text-secondary); }
+
+  .tv-refresh-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--navy-light);
+    background: var(--navy-light);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ROLE PICKER -->
+  <div id="role-picker">
+    <h1>Comunicación: barreras tecnológicas y jerárquicas</h1>
+    <p class="subtitle">Unidad Educativa Buena Fe — Encuesta y votación de la exposición</p>
+    <div class="role-picker">
+      <button class="role-btn" onclick="goTo('participant')">
+        <div class="role-title">Soy participante</div>
+        <div class="role-desc">Responde la encuesta inicial y vota por la propuesta que más te convenza</div>
+      </button>
+      <button class="role-btn" onclick="goTo('host')">
+        <div class="role-title">Modo expositor (proyector)</div>
+        <div class="role-desc">Muestra los resultados en vivo, estilo noticiero, con reloj y gráficos</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- PARTICIPANT VIEW -->
+  <div id="participant-view" class="hidden">
+    <span class="back-link" onclick="goTo('role-picker')">&larr; Volver</span>
+
+    <div id="p-survey">
+      <h1>Encuesta inicial</h1>
+      <p class="subtitle">Responde con sinceridad, tus respuestas son anónimas</p>
+
+      <div class="card">
+        <h2 style="font-size:15px;">1. En tu colegio o universidad, ¿los avisos importantes llegan principalmente por WhatsApp o canales informales?</h2>
+        <div id="q1-options"></div>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size:15px;">2. ¿Alguna vez se te pasó un aviso importante porque estaba mezclado con mensajes informales?</h2>
+        <div id="q2-options"></div>
+      </div>
+
+      <button class="btn-primary" id="send-survey" disabled onclick="sendSurvey()">Enviar respuestas</button>
+      <p class="status-msg" id="survey-status"></p>
+
+      <div class="center-row">
+        <button class="btn-secondary" onclick="goTo('p-vote')">Ir a la votación final &rarr;</button>
+      </div>
+    </div>
+
+    <div id="p-vote" class="hidden">
+      <h1>Votación final</h1>
+      <p class="subtitle">Si fueras parte de la dirección del colegio, ¿qué propuesta implementarías primero?</p>
+
+      <div id="vote-options"></div>
+      <p class="status-msg" id="vote-status"></p>
+
+      <div class="center-row">
+        <button class="btn-secondary" onclick="goTo('p-survey')">&larr; Volver a la encuesta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOST / TV VIEW -->
+  <div id="host-view" class="hidden">
+    <span class="back-link" onclick="goTo('role-picker')">&larr; Volver</span>
+
+    <div class="tv-screen">
+      <div class="tv-header">
+        <div>
+          <div class="tv-live">EN VIVO &middot; RESULTADOS</div>
+          <div class="tv-title" id="tv-title">Encuesta inicial</div>
+        </div>
+        <div class="tv-clock">
+          <div id="tv-date">--/--/----</div>
+          <div class="time" id="tv-time">--:--:--</div>
+        </div>
+      </div>
+
+      <div class="tv-tabs">
+        <button class="tv-tab active" id="tab-survey" onclick="switchTab('survey')">Encuesta inicial</button>
+        <button class="tv-tab" id="tab-vote" onclick="switchTab('vote')">Votación final</button>
+      </div>
+
+      <!-- SURVEY RESULTS -->
+      <div id="survey-results">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+          <div class="tv-stat">
+            <div class="label">Respuestas recibidas</div>
+            <div class="value" id="survey-total">0</div>
+          </div>
+        </div>
+
+        <h2 style="color:var(--white); font-size:15px;">1. Avisos por canales informales</h2>
+        <div id="q1-results" style="margin-bottom:24px;"></div>
+
+        <h2 style="color:var(--white); font-size:15px;">2. ¿Se te perdió un aviso importante?</h2>
+        <div id="q2-results"></div>
+      </div>
+
+      <!-- VOTE RESULTS -->
+      <div id="vote-results-view" class="hidden">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+          <div class="tv-stat">
+            <div class="label">Votos totales</div>
+            <div class="value" id="vote-total">0</div>
+          </div>
+        </div>
+
+        <div class="tv-grid">
+          <div id="vote-bars"></div>
+          <div class="donut-wrap">
+            <canvas id="donutChart" role="img" aria-label="Gráfico de dona con el resultado de la votación de propuestas">Resultado de la votación</canvas>
+            <div class="donut-center">
+              <div class="label">Líder</div>
+              <div class="leader" id="donut-leader">--</div>
+              <div class="pct" id="donut-pct">0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tv-footer">
+        <div class="tv-logo">
+          <div class="tv-logo-badge">G2</div>
+          <div class="tv-logo-text">
+            <div class="title">Grupo 2</div>
+            <div class="sub">Comportamiento Organizacional</div>
+          </div>
+        </div>
+        <button class="tv-refresh-btn" onclick="loadResults()">Actualizar ahora</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycby1St4Kf1_3T87NiZd2QOqb5YiiSPT991c_sUfUySOaWfse_4G_GUbMZ8_YtzHWpyBi/exec"; // termina en /exec
+
+const Q1_OPTS = [
+  { text: "Sí, casi todo llega por WhatsApp o canales informales" },
+  { text: "No, hay un canal formal claro" },
+  { text: "A veces, depende del tipo de aviso" }
+];
+const Q2_OPTS = [
+  { text: "Sí, me pasó" },
+  { text: "No, nunca me pasó" }
+];
+const VOTE_OPTS = [
+  { key: "notificaciones", label: "Notificaciones a padres", desc: "Barrera tecnológica", color: "#1D9E75", colorLight: "#5DCAA5" },
+  { key: "canal", label: "Canal Dirección-Profesores", desc: "Barrera jerárquica", color: "#D85A30", colorLight: "#F0997B" },
+  { key: "comisiones", label: "Registro de comisiones", desc: "Barrera jerárquica", color: "#378ADD", colorLight: "#85B7EB" }
+];
+
+let answers = { q1: null, q2: null };
+let voteChoice = null;
+let donutChart = null;
+
+function goTo(view) {
+  document.getElementById("role-picker").classList.add("hidden");
+  document.getElementById("participant-view").classList.add("hidden");
+  document.getElementById("host-view").classList.add("hidden");
+  document.getElementById("p-survey").classList.add("hidden");
+  document.getElementById("p-vote").classList.add("hidden");
+
+  if (view === "role-picker") {
+    document.getElementById("role-picker").classList.remove("hidden");
+  } else if (view === "participant") {
+    document.getElementById("participant-view").classList.remove("hidden");
+    document.getElementById("p-survey").classList.remove("hidden");
+  } else if (view === "p-survey") {
+    document.getElementById("participant-view").classList.remove("hidden");
+    document.getElementById("p-survey").classList.remove("hidden");
+  } else if (view === "p-vote") {
+    document.getElementById("participant-view").classList.remove("hidden");
+    document.getElementById("p-vote").classList.remove("hidden");
+  } else if (view === "host") {
+    document.getElementById("host-view").classList.remove("hidden");
+    startClock();
+    loadResults();
+    if (!window._autoRefresh) {
+      window._autoRefresh = setInterval(loadResults, 5000);
+    }
+  }
+}
+
+function renderOptions(containerId, opts, onSelect) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  opts.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.innerHTML = opt.text + (opt.desc ? '<span class="opt-sub">' + opt.desc + "</span>" : "");
+    btn.addEventListener("click", () => {
+      [...container.children].forEach(c => c.classList.remove("selected"));
+      btn.classList.add("selected");
+      onSelect(i, opt);
+    });
+    container.appendChild(btn);
+  });
+}
+
+renderOptions("q1-options", Q1_OPTS, (i) => {
+  answers.q1 = i;
+  checkSurveyReady();
+});
+renderOptions("q2-options", Q2_OPTS, (i) => {
+  answers.q2 = i;
+  checkSurveyReady();
+});
+renderOptions("vote-options", VOTE_OPTS, (i, opt) => {
+  voteChoice = opt.key;
+  sendVote(opt.key);
+});
+
+function checkSurveyReady() {
+  document.getElementById("send-survey").disabled = !(answers.q1 !== null && answers.q2 !== null);
+}
+
+function postData(payload) {
+  return fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(payload)
+  });
+}
+
+function sendSurvey() {
+  postData({ type: "survey", q1: answers.q1, q2: answers.q2 })
+    .then(() => {
+      document.getElementById("survey-status").textContent = "¡Gracias! Tu respuesta fue enviada.";
+      document.getElementById("send-survey").disabled = true;
+      document.getElementById("send-survey").textContent = "Enviado";
+    })
+    .catch(() => {
+      document.getElementById("survey-status").textContent = "Error al enviar, intenta de nuevo.";
+    });
+}
+
+function sendVote(choice) {
+  postData({ type: "vote", choice: choice })
+    .then(() => {
+      document.getElementById("vote-status").textContent = "¡Voto registrado! Gracias.";
+    })
+    .catch(() => {
+      document.getElementById("vote-status").textContent = "Error al votar, intenta de nuevo.";
+    });
+}
+
+function switchTab(tab) {
+  document.getElementById("tab-survey").classList.toggle("active", tab === "survey");
+  document.getElementById("tab-vote").classList.toggle("active", tab === "vote");
+  document.getElementById("survey-results").classList.toggle("hidden", tab !== "survey");
+  document.getElementById("vote-results-view").classList.toggle("hidden", tab !== "vote");
+  document.getElementById("tv-title").textContent = tab === "survey" ? "Encuesta inicial" : "Votación final";
+}
+
+function barRow(name, count, total, color) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return '<div class="tv-bar-row">' +
+    '<div class="tv-bar-label">' +
+      '<span class="name">' + name + '</span>' +
+      '<span class="pct" style="color:' + color + ';">' + pct + '%</span>' +
+    '</div>' +
+    '<div class="tv-bar-track"><div class="tv-bar-fill" style="width:' + pct + '%; background:' + color + ';"></div></div>' +
+    '<span class="tv-bar-count">' + count + (count === 1 ? ' voto' : ' votos') + '</span>' +
+  '</div>';
+}
+
+function jsonpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = "cb_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+    const script = document.createElement("script");
+    window[cbName] = (data) => {
+      resolve(data);
+      delete window[cbName];
+      script.remove();
+    };
+    script.onerror = () => {
+      reject(new Error("JSONP load error"));
+      delete window[cbName];
+      script.remove();
+    };
+    script.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "callback=" + cbName;
+    document.body.appendChild(script);
+  });
+}
+
+function loadResults() {
+  jsonpRequest(API_URL)
+    .then((data) => {
+      if (!data || !data.ok) return;
+
+      document.getElementById("survey-total").textContent = data.survey.total;
+      const q1ColorVars = ["#D85A30", "#1D9E75", "#378ADD"];
+      document.getElementById("q1-results").innerHTML =
+        Q1_OPTS.map((o, i) => barRow(o.text, data.survey.q1[i], data.survey.total, q1ColorVars[i])).join("");
+
+      const q2ColorVars = ["#D85A30", "#1D9E75"];
+      document.getElementById("q2-results").innerHTML =
+        Q2_OPTS.map((o, i) => barRow(o.text, data.survey.q2[i], data.survey.total, q2ColorVars[i])).join("");
+
+      const voteTotal = data.vote.total;
+      document.getElementById("vote-total").textContent = voteTotal;
+
+      document.getElementById("vote-bars").innerHTML =
+        VOTE_OPTS.map(o => barRow(o.label, data.vote.counts[o.key] || 0, voteTotal, o.color)).join("");
+
+      const donutData = VOTE_OPTS.map(o => data.vote.counts[o.key] || 0);
+      const donutColors = VOTE_OPTS.map(o => o.color);
+      const donutLabels = VOTE_OPTS.map(o => o.label);
+
+      if (donutChart) {
+        donutChart.data.datasets[0].data = donutData;
+        donutChart.update();
+      } else {
+        donutChart = new Chart(document.getElementById("donutChart"), {
+          type: "doughnut",
+          data: {
+            labels: donutLabels,
+            datasets: [{
+              data: donutData,
+              backgroundColor: donutColors,
+              borderColor: "#0F1428",
+              borderWidth: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "70%",
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      if (voteTotal > 0) {
+        let maxIdx = 0;
+        for (let i = 1; i < VOTE_OPTS.length; i++) {
+          if ((data.vote.counts[VOTE_OPTS[i].key] || 0) > (data.vote.counts[VOTE_OPTS[maxIdx].key] || 0)) maxIdx = i;
+        }
+        const leader = VOTE_OPTS[maxIdx];
+        const leaderPct = Math.round(((data.vote.counts[leader.key] || 0) / voteTotal) * 100);
+        document.getElementById("donut-leader").textContent = leader.label;
+        document.getElementById("donut-leader").style.color = leader.colorLight;
+        document.getElementById("donut-pct").textContent = leaderPct + "%";
+      } else {
+        document.getElementById("donut-leader").textContent = "--";
+        document.getElementById("donut-pct").textContent = "0%";
+      }
+    })
+    .catch((err) => {
+      console.error("Error cargando resultados:", err);
+    });
+}
+
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const boliviaOffset = -4 * 60;
+    const localOffset = now.getTimezoneOffset();
+    const bolivia = new Date(now.getTime() + (boliviaOffset + localOffset) * 60000);
+
+    const days = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+    const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+    const dayName = days[bolivia.getDay()];
+    const day = bolivia.getDate();
+    const month = months[bolivia.getMonth()];
+    const year = bolivia.getFullYear();
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const h = pad(bolivia.getHours());
+    const m = pad(bolivia.getMinutes());
+    const s = pad(bolivia.getSeconds());
+
+    document.getElementById("tv-date").textContent = dayName + ", " + day + " de " + month + " de " + year;
+    document.getElementById("tv-time").textContent = h + ":" + m + ":" + s + " (Bolivia)";
+  }
+  tick();
+  if (window._clockInterval) clearInterval(window._clockInterval);
+  window._clockInterval = setInterval(tick, 1000);
+}
+</script>
+
+</body>
+</html>
